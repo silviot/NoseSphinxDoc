@@ -227,6 +227,7 @@ class SphinxDocPlugin(Plugin):
                 lines.append(self.format_chat(req))
                 lines.append(":Response:\n")
                 lines.append(self.format_chat(resp, is_resp=True))
+                lines += ['', '----', '']
             lines.append('')
         return '\n'.join(lines)
 
