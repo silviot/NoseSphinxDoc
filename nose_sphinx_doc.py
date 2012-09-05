@@ -7,6 +7,7 @@ import textwrap
 
 import nose
 from nose.plugins import Plugin
+from webtest.compat import to_string, text_type
 
 LOGGER = logging.getLogger(__file__)
 
@@ -212,9 +213,6 @@ class SphinxDocPlugin(Plugin):
             sphinx-formatted text
         """
         lines = []
-        # lines.append('{0}.. autoclass:: {1}.{2}\n'.format(
-        #         ' ' * 4, test_info['module'], test_info['name']))
-        # lines.append('{0}:members:\n\n'.format(' ' * 8))
         test = test_info['test'].test
         name, doc = test._testMethodName, test._testMethodDoc
         lines.append(name)
@@ -228,16 +226,20 @@ class SphinxDocPlugin(Plugin):
                 lines.append(":Request:\n")
                 lines.append(self.format_chat(req))
                 lines.append(":Response:\n")
-                lines.append(self.format_chat(resp))
+                lines.append(self.format_chat(resp, is_resp=True))
             lines.append('')
         return '\n'.join(lines)
 
-    def format_chat(self, chat):
+    def format_chat(self, chat, is_resp=False):
         lines = []
         lines.append(".. code-block:: http")
         lines.append('')
-        for line in str(chat).split("\n"):
-            lines.append(' '*4 + line)
+        if is_resp:
+            text = response_to_string(chat)
+        else:
+            text = str(chat)
+        for line in text.split("\n"):
+            lines.append(' '*2 + line)
         lines.append('')
         return '\n'.join(lines)
 
@@ -493,3 +495,19 @@ class SphinxDocPlugin(Plugin):
     def finalize(self, result):
         test_dict = self.processTests(self.tests)
         self.genSphinxDoc(test_dict, self.doc_dir_name)
+
+
+def response_to_string(self):
+    simple_body = '\n'.join([l for l in self.testbody.splitlines()
+                             if l.strip()])
+    headers = [(self._normalize_header_name(n), v)
+               for n, v in self.headerlist
+               if n.lower() != 'content-length']
+    headers.sort()
+    output = 'HTTP/1.0 %s\n%s\n\n%s' % (
+        to_string(self.status),
+        '\n'.join(['%s: %s' % (n, v) for n, v in headers]),
+        simple_body)
+    if isinstance(output, text_type):
+        output = output.encode(self.charset or 'utf-8', 'replace')
+    return output

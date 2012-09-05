@@ -15,6 +15,14 @@ class Recorder(object):
             return res
 
         TestApp.do_request = mydo_request
+        # Enable json indentation
+        import simplejson
+        dumps_original = simplejson.dumps
+        def my_dumps(obj, *args, **kwargs):
+            if 'indent' not in kwargs:
+                kwargs['indent'] = 2
+            return dumps_original(obj, *args, **kwargs)
+        simplejson.dumps = my_dumps
 
     def reset(self):
         self.chats = []
