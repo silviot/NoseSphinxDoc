@@ -27,10 +27,9 @@ class SphinxDocPlugin(Plugin):
     sphinx .rst file with references to all tests.
     """
 
-    name = 'sphinx_doc'
-    """plugin name"""
-    enableOpt = 'sphinx_doc'
-    """default name for ouput file"""
+    name = 'sphinx_doc' # plugin name
+    enableOpt = 'sphinx_doc' # default name for ouput file
+    enable_webapp_chats = False
 
     #custom methods of SphinxDocPlugin
 
@@ -87,7 +86,9 @@ class SphinxDocPlugin(Plugin):
                 * type
                     either 'DocTestCase', 'FunctionTestCase' or 'TestCase'
         """
-        chats = self.webapp_chats[test.test]
+        chats = []
+        if self.enable_webapp_chats:
+           chats = self.webapp_chats[test.test]
         if isinstance(test.test, nose.plugins.doctests.DocTestCase):
             address = test.test.address()  # tuple: (file, module, name)
             module = address[1]
@@ -223,13 +224,12 @@ class SphinxDocPlugin(Plugin):
             lines.append(textwrap.dedent(doc))
             lines.append('')
         if self.enable_webapp_chats:
-            if test_info['webapp_chats']:
-                for req, resp in test_info['webapp_chats']:
-                    lines.append(":Request:\n")
-                    lines.append(self.format_chat(req))
-                    lines.append(":Response:\n")
-                    lines.append(self.format_chat(resp))
-                lines.append('')
+            for req, resp in test_info['webapp_chats']:
+                lines.append(":Request:\n")
+                lines.append(self.format_chat(req))
+                lines.append(":Response:\n")
+                lines.append(self.format_chat(resp))
+            lines.append('')
         return '\n'.join(lines)
 
     def format_chat(self, chat):
@@ -486,8 +486,9 @@ class SphinxDocPlugin(Plugin):
             self.webapp_chats = {}
 
     def stopTest(self, test):
-        self.webapp_chats[test] = self.webapp_chats_recorder.chats
-        self.webapp_chats_recorder.reset()
+        if self.enable_webapp_chats:
+            self.webapp_chats[test] = self.webapp_chats_recorder.chats
+            self.webapp_chats_recorder.reset()
 
     def finalize(self, result):
         test_dict = self.processTests(self.tests)
