@@ -3,6 +3,7 @@ import logging
 import unittest
 import errno
 import re
+import textwrap
 
 import nose
 from nose.plugins import Plugin
@@ -86,25 +87,26 @@ class SphinxDocPlugin(Plugin):
                 * type
                     either 'DocTestCase', 'FunctionTestCase' or 'TestCase'
         """
+        chats = self.webapp_chats[test.test]
         if isinstance(test.test, nose.plugins.doctests.DocTestCase):
             address = test.test.address()  # tuple: (file, module, name)
             module = address[1]
             name = test.test.id().replace(module+'.', '', 1)
             return {'module': module, 'name': name,
-                'test': test, 'type': 'DocTestCase'}
-           
+                'test': test, 'type': 'DocTestCase', 'webapp_chats': chats}
+
         elif isinstance(test.test, nose.case.FunctionTestCase):
             real_test = test.test.test  # get unwrapped test function
             module = real_test.__module__
             name = real_test.__name__
             return {'module': module, 'name': name,
-                'test': test, 'type': 'FunctionTestCase'}
+                'test': test, 'type': 'FunctionTestCase', 'webapp_chats': chats}
 
         elif isinstance(test.test, unittest.TestCase):
             module = test.test.__module__
             name = type(test.test).__name__
             return {'module': module, 'name': name,
-                'test': test, 'type': 'TestCase'}
+                'test': test, 'type': 'TestCase', 'webapp_chats': chats}
         else:
             raise Exception('unsupported test type:' + str(test.test))
 
@@ -209,10 +211,35 @@ class SphinxDocPlugin(Plugin):
             sphinx-formatted text
         """
         lines = []
-        lines.append('{0}.. autoclass:: {1}.{2}\n'.format(
-                ' ' * 4, test_info['module'], test_info['name']))
-        lines.append('{0}:members:\n\n'.format(' ' * 8))
-        return ''.join(lines)
+        # lines.append('{0}.. autoclass:: {1}.{2}\n'.format(
+        #         ' ' * 4, test_info['module'], test_info['name']))
+        # lines.append('{0}:members:\n\n'.format(' ' * 8))
+        test = test_info['test'].test
+        name, doc = test._testMethodName, test._testMethodDoc
+        lines.append(name)
+        lines.append('='*len(name))
+        lines.append('')
+        if doc:
+            lines.append(textwrap.dedent(doc))
+            lines.append('')
+        if self.enable_webapp_chats:
+            if test_info['webapp_chats']:
+                for req, resp in test_info['webapp_chats']:
+                    lines.append(":Request:\n")
+                    lines.append(self.format_chat(req))
+                    lines.append(":Response:\n")
+                    lines.append(self.format_chat(resp))
+                lines.append('')
+        return '\n'.join(lines)
+
+    def format_chat(self, chat):
+        lines = []
+        lines.append(".. code-block:: http")
+        lines.append('')
+        for line in str(chat).split("\n"):
+            lines.append(' '*4 + line)
+        lines.append('')
+        return '\n'.join(lines)
 
     def _document_doc_test_case(self, test_info):
         """
@@ -245,7 +272,7 @@ class SphinxDocPlugin(Plugin):
         :param lines:
             lines of text
         :returns:
-            lines of text with 
+            lines of text with
         """
         result = lines
         space_counters = [len(re.findall(r'^ +', line)[0])
@@ -296,7 +323,7 @@ class SphinxDocPlugin(Plugin):
             else:
                 raise Exception('unknown test type')
         lines.append('\n')
-        return ''.join(lines)
+        return '\n'.join(lines)
 
     def _get_toc(self, test_dict):
         """
@@ -441,11 +468,26 @@ class SphinxDocPlugin(Plugin):
                       help="Create test graph using sphinx grapviz extension,"
                            " use with sphinx_doc option"
                            " [NOSE_SPHINX_DOC_GRAPH]")
+        parser.add_option('--webapp-chats',
+                      action='store_true',
+                      dest='enable_webapp_chats',
+                      default=env.get('NOSE_SPHINX_WEBAPP_CHATS', False),
+                      help="Include chats originating from webtest.TestApp"
+                      )
 
     def configure(self, options, conf):
         super(SphinxDocPlugin, self).configure(options, conf)
         self.doc_dir_name = options.sphinx_doc_dir
         self.draw_graph = options.sphinx_doc_graph
+        self.enable_webapp_chats = options.enable_webapp_chats
+        if self.enable_webapp_chats:
+            from monkeypatch import Recorder
+            self.webapp_chats_recorder = Recorder()
+            self.webapp_chats = {}
+
+    def stopTest(self, test):
+        self.webapp_chats[test] = self.webapp_chats_recorder.chats
+        self.webapp_chats_recorder.reset()
 
     def finalize(self, result):
         test_dict = self.processTests(self.tests)
