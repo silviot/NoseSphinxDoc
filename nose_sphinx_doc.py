@@ -494,8 +494,12 @@ class SphinxDocPlugin(Plugin):
             self.webapp_chats_recorder.reset()
 
     def finalize(self, result):
-        test_dict = self.processTests(self.tests)
-        self.genSphinxDoc(test_dict, self.doc_dir_name)
+        if not result.errors:
+            test_dict = self.processTests(self.tests)
+            self.genSphinxDoc(test_dict, self.doc_dir_name)
+
+    def report(self, stream):
+        stream.writeln("Not writing sphinx documentation since tests had errors.")
 
 
 def response_to_string(self):
