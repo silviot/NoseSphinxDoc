@@ -31,6 +31,7 @@ class SphinxDocPlugin(Plugin):
     name = 'sphinx_doc' # plugin name
     enableOpt = 'sphinx_doc' # default name for ouput file
     enable_webapp_chats = False
+    has_errors = False
 
     #custom methods of SphinxDocPlugin
 
@@ -215,6 +216,8 @@ class SphinxDocPlugin(Plugin):
         lines = []
         test = test_info['test'].test
         name, doc = test._testMethodName, test._testMethodDoc
+        classname = test.__class__.__name__
+        lines.append(".. _%s.%s:\n" % (classname,name) )
         lines.append(name)
         lines.append('='*len(name))
         lines.append('')
@@ -222,13 +225,16 @@ class SphinxDocPlugin(Plugin):
             lines.append(textwrap.dedent(doc))
             lines.append('')
         if self.enable_webapp_chats:
+            chat_texts = []
             for req, resp in test_info['webapp_chats']:
-                lines.append(":Request:\n")
-                lines.append(self.format_chat(req))
-                lines.append(":Response:\n")
-                lines.append(self.format_chat(resp, is_resp=True))
-                lines += ['', '----', '']
-            lines.append('')
+                chat_lines = []
+                chat_lines.append(":Request:\n")
+                chat_lines.append(self.format_chat(req))
+                chat_lines.append(":Response:\n")
+                chat_lines.append(self.format_chat(resp, is_resp=True))
+                chat_lines += ['', '----', '']
+                chat_texts.append('\n'.join(chat_lines))
+            lines.append('\n----\n'.join(chat_texts))
         return '\n'.join(lines)
 
     def format_chat(self, chat, is_resp=False):
@@ -497,9 +503,12 @@ class SphinxDocPlugin(Plugin):
         if not result.errors:
             test_dict = self.processTests(self.tests)
             self.genSphinxDoc(test_dict, self.doc_dir_name)
+        else:
+            self.has_errors = True
 
     def report(self, stream):
-        stream.writeln("Not writing sphinx documentation since tests had errors.")
+        if self.has_errors:
+            stream.writeln("Not writing sphinx documentation since tests had errors.")
 
 
 def response_to_string(self):
