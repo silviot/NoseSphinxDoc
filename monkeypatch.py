@@ -11,7 +11,8 @@ class Recorder(object):
 
         def mydo_request(self, req, status, expect_errors):
             res = me.do_request(self, req, status, expect_errors)
-            me.chats.append((req, res))
+            if 'dontlog_web_chats' not in req.environ or not req.environ['dontlog_web_chats']:
+                me.chats.append((req, res))
             return res
 
         TestApp.do_request = mydo_request
