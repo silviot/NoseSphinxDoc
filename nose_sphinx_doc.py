@@ -227,14 +227,12 @@ class SphinxDocPlugin(Plugin):
         if self.enable_webapp_chats:
             chat_texts = []
             for req, resp in test_info['webapp_chats']:
-                chat_lines = []
-                chat_lines.append(":Request:\n")
+                chat_lines = [":Request:\n"]
                 chat_lines.append(self.format_chat(req))
                 chat_lines.append(":Response:\n")
                 chat_lines.append(self.format_chat(resp, is_resp=True))
-                chat_lines += ['', '----', '']
                 chat_texts.append('\n'.join(chat_lines))
-            lines.append('\n----\n'.join(chat_texts))
+            lines.append('\n--------------\n\n'.join(chat_texts))
         return '\n'.join(lines)
 
     def format_chat(self, chat, is_resp=False):
@@ -247,7 +245,7 @@ class SphinxDocPlugin(Plugin):
             text = str(chat)
         for line in text.split("\n"):
             lines.append(' '*2 + line)
-        lines.append('')
+        lines.append('\n')
         return '\n'.join(lines)
 
     def _document_doc_test_case(self, test_info):
@@ -308,7 +306,7 @@ class SphinxDocPlugin(Plugin):
         return('{0}.. autofunction:: {1}.{2}\n\n'.format(
             ' ' * 4, test_info['module'], test_info['name']))
 
-    def _document_tests(self, test_info_list):
+    def _document_tests(self, test_info_list, module_path=''):
         """
         Generate sphinx section with a list of references to tests.
 
@@ -320,7 +318,9 @@ class SphinxDocPlugin(Plugin):
         if not test_info_list:
             return ''
         lines = []
-        lines.append(self.sphinxSection('Available tests'))
+        lines.append(self.sphinxSection(
+            '%s tests' % '.'.join(module_path)
+        ))
 
         for test_info in test_info_list:
             if test_info['type'] == 'TestCase':
@@ -368,7 +368,11 @@ class SphinxDocPlugin(Plugin):
         docfile.write(self._get_toc(test_dict))
 
         if '__tests__' in test_dict:
-            docfile.write(self._document_tests(test_dict['__tests__']))
+            docfile.write(".. _%s:\n\n" % '.'.join(module_path) )
+            docfile.write(self._document_tests(
+                test_dict['__tests__'],
+                module_path=module_path
+            ))
 
         submodules = sorted(test_dict.keys())
         if '__tests__' in submodules:
