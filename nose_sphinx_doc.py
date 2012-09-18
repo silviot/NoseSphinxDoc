@@ -227,7 +227,7 @@ class SphinxDocPlugin(Plugin):
         if self.enable_webapp_chats:
             chat_texts = []
             for req, resp in test_info['webapp_chats']:
-                chat_lines = [":Request:\n"]
+                chat_lines = ["\n:Request:\n"]
                 chat_lines.append(self.format_chat(req))
                 chat_lines.append(":Response:\n")
                 chat_lines.append(self.format_chat(resp, is_resp=True))
