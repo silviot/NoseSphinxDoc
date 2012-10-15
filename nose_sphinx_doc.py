@@ -244,11 +244,13 @@ class SphinxDocPlugin(Plugin):
         else:
             try:
                 text = str(chat)
+                for line in text.split("\n"):
+                    lines.append(' '*2 + line)
             except UnicodeDecodeError:
                 text = chat.as_bytes().decode('ascii', errors='replace')
                 text = text.encode('ascii', errors='replace')
-        for line in text.split("\n"):
-            lines.append(' '*2 + line)
+                for line in text.split("\n"):
+                    lines.append(' '*2 + repr(line))
         lines.append('\n')
         return '\n'.join(lines)
 
