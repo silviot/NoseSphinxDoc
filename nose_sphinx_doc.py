@@ -244,13 +244,11 @@ class SphinxDocPlugin(Plugin):
         else:
             try:
                 text = str(chat)
-                for line in text.split("\n"):
-                    lines.append(' '*2 + line)
             except UnicodeDecodeError:
-                text = chat.as_bytes().decode('ascii', errors='replace')
-                text = text.encode('ascii', errors='replace')
-                for line in text.split("\n"):
-                    lines.append(' '*2 + repr(line))
+                text = chat.as_bytes().encode("string_escape")
+                text = text.replace(r'\r\n', '\n').replace(r'\n', '\n')
+        for line in text.split("\n"):
+            lines.append(' ' * 2 + line)
         lines.append('\n')
         return '\n'.join(lines)
 
@@ -526,7 +524,7 @@ def response_to_string(self):
         simple_body = '\n'.join([l for l in self.testbody.splitlines()
                                  if l.strip()])
     except:
-        simple_body = '\n'.join([repr(l) for l in self.normal_body.splitlines()
+        simple_body = '\n'.join([l.encode('string_escape') for l in self.normal_body.splitlines()
                                  if l.strip()])
     headers = [(self._normalize_header_name(n), v)
                for n, v in self.headerlist
