@@ -244,7 +244,7 @@ class SphinxDocPlugin(Plugin):
         else:
             try:
                 text = str(chat)
-            except UnicodeDecodeError:
+            except (UnicodeDecodeError, UnicodeEncodeError):
                 text = chat.as_bytes().encode("string_escape")
                 text = text.replace(r'\r\n', '\n').replace(r'\n', '\n')
         for line in text.split("\n"):
