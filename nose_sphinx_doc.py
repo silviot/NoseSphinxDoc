@@ -526,9 +526,7 @@ def response_to_string(self):
     except:
         simple_body = '\n'.join([l.encode('string_escape') for l in self.normal_body.splitlines()
                                  if l.strip()])
-    headers = [(self._normalize_header_name(n), v)
-               for n, v in self.headerlist
-               if n.lower() != 'content-length']
+    headers = [(n, v) for n, v in self.headerlist if n.lower() != 'content-length']
     headers.sort()
     output = 'HTTP/1.0 %s\n%s\n\n%s' % (
         to_string(self.status),
