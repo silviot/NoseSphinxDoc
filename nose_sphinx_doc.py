@@ -266,7 +266,7 @@ class SphinxDocPlugin(Plugin):
             sphinx-formatted text
         """
         lines = []
-        lines.append('{0}Doctest in {1}.{2}:\n{3}.. code-block:: python\n'.format(
+        lines.append('{0}Doctest in {1}.{2}:\n{3}.. code-block:: python\n\n'.format(
                 ' ' * 4, test_info['module'], test_info['name'], ' ' * 8))
         docstring = test_info['test'].test._dt_test.docstring
         docstring_lines = self._lstrip_common_spaces(docstring.split('\n'))
