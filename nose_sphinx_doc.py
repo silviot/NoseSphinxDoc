@@ -286,7 +286,7 @@ class SphinxDocPlugin(Plugin):
             lines of text with
         """
         result = lines
-        space_counters = [len(re.findall(r'^ +', line)[0])
+        space_counters = [len(re.findall(r'^ *', line)[0])
                             for line in result
                             if len(line) > 0]
         if space_counters:
